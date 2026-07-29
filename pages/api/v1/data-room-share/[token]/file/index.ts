@@ -28,6 +28,8 @@ async function getHandler(
   const token = request.query.token as string;
   const documentId = request.query.document_id;
   const providedPassword = request.headers["x-share-password"];
+  const providedEmail = request.headers["x-viewer-email"];
+  const providedName = request.headers["x-viewer-name"];
 
   if (typeof documentId !== "string" || !documentId) {
     throw new ValidationError({
@@ -40,6 +42,8 @@ async function getHandler(
     token,
     documentId,
     typeof providedPassword === "string" ? providedPassword : undefined,
+    typeof providedEmail === "string" ? providedEmail : undefined,
+    typeof providedName === "string" ? providedName : undefined,
   );
 
   const file = await storage.getFile(storage_key);

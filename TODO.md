@@ -513,6 +513,20 @@ it's sequenced after the lower-effort wins above.
       configured in this project, and there's no real domain available to
       validate an end-to-end flow against in this environment) — not yet
       scoped into a story.
+- [x] **Data room feature parity with single-document links** — US-55
+      deliberately shipped data room links as a separate, smaller
+      mechanism than `share_links` (password/expiry/revocation only).
+      Seven follow-up stories written 2026-07-23, all implemented the
+      same day. See CHANGELOG for the full implementation.
+  - [x] US-56 — View analytics
+  - [x] US-57 — Access control: require email + per-email allow-list
+  - [x] US-58 — NDA gate
+  - [x] US-59 — View notifications
+  - [x] US-60 — Watermarking (reuses the existing client-side canvas
+        mechanism as-is)
+  - [x] US-61 — Custom branding (accent color + welcome message)
+  - [x] US-62 — AI viewer chat, scoped to one document at a time (not
+        whole-room retrieval — that would be its own, bigger story)
 
 ---
 

@@ -220,6 +220,13 @@ export const dataRoomLinkCreateSchema = z.object({
       message: "A data de expiração deve ser futura.",
     })
     .optional(),
+  require_email: z.boolean().optional(),
+  allowed_emails: allowedEmailsSchema.optional(),
+  notify_on_view: z.boolean().optional(),
+  watermark_enabled: z.boolean().optional(),
+  nda_text: ndaTextSchema.optional(),
+  brand_accent_color: brandAccentColorSchema.optional(),
+  brand_welcome_message: brandWelcomeMessageSchema.optional(),
 });
 
 export const dataRoomLinkUpdateSchema = z
@@ -243,10 +250,45 @@ export const dataRoomLinkUpdateSchema = z
       .nullable()
       .optional(),
     is_active: z.boolean().optional(),
+    require_email: z.boolean().optional(),
+    allowed_emails: allowedEmailsSchema.nullable().optional(),
+    notify_on_view: z.boolean().optional(),
+    watermark_enabled: z.boolean().optional(),
+    nda_text: ndaTextSchema.nullable().optional(),
+    brand_accent_color: brandAccentColorSchema.nullable().optional(),
+    brand_welcome_message: brandWelcomeMessageSchema.nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "Pelo menos um campo deve ser fornecido para atualização.",
   });
+
+export const dataRoomLinkViewCreateSchema = z.object({
+  document_id: z.string().uuid("O 'document_id' informado não é válido."),
+  viewer_fingerprint: z
+    .string()
+    .max(64, "O 'viewer_fingerprint' deve ter no máximo 64 caracteres.")
+    .optional(),
+  viewer_email: z
+    .string()
+    .email("O 'viewer_email' informado não é válido.")
+    .max(254, "O 'viewer_email' deve ter no máximo 254 caracteres.")
+    .optional(),
+  viewer_name: z
+    .string()
+    .max(255, "O 'viewer_name' deve ter no máximo 255 caracteres.")
+    .optional(),
+  time_on_page: z
+    .number()
+    .int()
+    .min(0, "O 'time_on_page' não pode ser negativo.")
+    .optional(),
+  pages_viewed: z
+    .number()
+    .int()
+    .min(0, "O 'pages_viewed' não pode ser negativo.")
+    .optional(),
+  downloaded: z.boolean().optional(),
+});
 
 export const workspaceCreateSchema = z.object({
   name: z

@@ -211,7 +211,18 @@ async function createDataRoom(
 async function createDataRoomLink(
   cookie: string,
   dataRoomId: string,
-  overrides?: { label?: string; password?: string; expires_at?: string },
+  overrides?: {
+    label?: string;
+    password?: string;
+    expires_at?: string;
+    require_email?: boolean;
+    allowed_emails?: string[];
+    notify_on_view?: boolean;
+    watermark_enabled?: boolean;
+    nda_text?: string;
+    brand_accent_color?: string;
+    brand_welcome_message?: string;
+  },
   // returns `any` because the endpoint can respond with either a DataRoomLinkResponse or an ErrorResponse
 ): Promise<any> {
   const response = await fetch(
@@ -231,6 +242,31 @@ async function expireDataRoomLink(linkId: string): Promise<void> {
     text: "UPDATE data_room_links SET expires_at = $1 WHERE id = $2",
     values: [new Date(Date.now() - 1000), linkId],
   });
+}
+
+async function recordDataRoomView(
+  token: string,
+  body: {
+    document_id: string;
+    viewer_fingerprint?: string;
+    viewer_email?: string;
+    viewer_name?: string;
+    time_on_page?: number;
+    pages_viewed?: number;
+    downloaded?: boolean;
+  },
+  // returns `any` because the endpoint can respond with either a RecordedDataRoomLinkView or an ErrorResponse
+): Promise<any> {
+  const response = await fetch(
+    `http://localhost:3000/api/v1/data-room-share/${token}/view`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+
+  return response.json();
 }
 
 // Mirrors models/passwordReset.ts's own hashing — the raw token is only
@@ -402,10 +438,35 @@ interface Orchestrator {
     // eslint-disable-next-line no-unused-vars
     dataRoomId: string,
     // eslint-disable-next-line no-unused-vars
-    overrides?: { label?: string; password?: string; expires_at?: string },
+    overrides?: {
+      label?: string;
+      password?: string;
+      expires_at?: string;
+      require_email?: boolean;
+      allowed_emails?: string[];
+      notify_on_view?: boolean;
+      watermark_enabled?: boolean;
+      nda_text?: string;
+      brand_accent_color?: string;
+      brand_welcome_message?: string;
+    },
   ): Promise<any>;
   // eslint-disable-next-line no-unused-vars
   expireDataRoomLink(linkId: string): Promise<void>;
+  recordDataRoomView(
+    // eslint-disable-next-line no-unused-vars
+    token: string,
+    // eslint-disable-next-line no-unused-vars
+    body: {
+      document_id: string;
+      viewer_fingerprint?: string;
+      viewer_email?: string;
+      viewer_name?: string;
+      time_on_page?: number;
+      pages_viewed?: number;
+      downloaded?: boolean;
+    },
+  ): Promise<any>;
   // eslint-disable-next-line no-unused-vars
   expirePasswordResetToken(token: string): Promise<void>;
   recordView(
@@ -455,6 +516,7 @@ const orchestrator: Orchestrator = {
   createDataRoom,
   createDataRoomLink,
   expireDataRoomLink,
+  recordDataRoomView,
   expirePasswordResetToken,
   recordView,
   pushBackLinkViewCreatedAt,

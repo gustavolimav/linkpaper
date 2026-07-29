@@ -298,13 +298,20 @@ export interface DataRoomDocumentSummary {
   allow_download: boolean;
 }
 
+// Owner-facing only (US-56) — never returned by the public
+// data-room-share routes, which use the plain DataRoomDocumentSummary.
+export interface DataRoomDocumentWithStats extends DataRoomDocumentSummary {
+  view_count: number;
+  last_viewed_at: Date | null;
+}
+
 export interface DataRoomResponse {
   id: string;
   workspace_id: string;
   name: string;
   created_at: Date;
   updated_at: Date;
-  documents: DataRoomDocumentSummary[];
+  documents: DataRoomDocumentWithStats[];
 }
 
 // One row per room across a workspace (list view) — narrower than
@@ -347,6 +354,12 @@ export interface DataRoomLink {
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
+  require_email: boolean;
+  notify_on_view: boolean;
+  watermark_enabled: boolean;
+  nda_text: string | null;
+  brand_accent_color: string | null;
+  brand_welcome_message: string | null;
 }
 
 export interface DataRoomLinkResponse {
@@ -359,12 +372,26 @@ export interface DataRoomLinkResponse {
   created_at: Date;
   updated_at: Date;
   has_password: boolean;
+  require_email: boolean;
+  allowed_emails: string[];
+  notify_on_view: boolean;
+  watermark_enabled: boolean;
+  nda_text: string | null;
+  brand_accent_color: string | null;
+  brand_welcome_message: string | null;
 }
 
 export interface DataRoomLinkCreateInput {
   label?: string;
   password?: string;
   expires_at?: string;
+  require_email?: boolean;
+  allowed_emails?: string[];
+  notify_on_view?: boolean;
+  watermark_enabled?: boolean;
+  nda_text?: string;
+  brand_accent_color?: string;
+  brand_welcome_message?: string;
 }
 
 export interface DataRoomLinkUpdateInput {
@@ -372,11 +399,20 @@ export interface DataRoomLinkUpdateInput {
   password?: string | null;
   expires_at?: string | null;
   is_active?: boolean;
+  require_email?: boolean;
+  allowed_emails?: string[] | null;
+  notify_on_view?: boolean;
+  watermark_enabled?: boolean;
+  nda_text?: string | null;
+  brand_accent_color?: string | null;
+  brand_welcome_message?: string | null;
 }
 
 // Public, unauthenticated shape returned by the data-room-share token
 // route — deliberately excludes workspace_id/user_id and the documents'
 // storage_key (same narrowing rationale as ShareLinkWithDocument).
+// watermark_enabled/nda_text/brand_* ARE included (same rationale as
+// ShareLinkWithDocument: the viewer's own client needs them to render).
 export interface DataRoomLinkWithDocuments {
   id: string;
   token: string;
@@ -384,11 +420,62 @@ export interface DataRoomLinkWithDocuments {
   expires_at: Date | null;
   is_active: boolean;
   has_password: boolean;
+  watermark_enabled: boolean;
+  nda_text: string | null;
+  brand_accent_color: string | null;
+  brand_welcome_message: string | null;
+  ai_chat_available: boolean;
   data_room: {
     id: string;
     name: string;
   };
   documents: DataRoomDocumentSummary[];
+}
+
+export interface DataRoomLinkViewCreateInput {
+  document_id: string;
+  viewer_fingerprint?: string;
+  viewer_email?: string;
+  viewer_name?: string;
+  time_on_page?: number;
+  pages_viewed?: number;
+  downloaded?: boolean;
+  ip_address?: string;
+  user_agent?: string;
+}
+
+export interface DataRoomLinkView {
+  id: string;
+  data_room_link_id: string;
+  document_id: string;
+  viewer_fingerprint: string | null;
+  viewer_email: string | null;
+  viewer_name: string | null;
+  ip_address: string | null;
+  country_code: string | null;
+  user_agent: string | null;
+  time_on_page: number | null;
+  pages_viewed: number | null;
+  downloaded: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface RecordedDataRoomLinkView extends DataRoomLinkView {
+  is_new_viewer: boolean;
+}
+
+// Used to notify the room's creator when a data-room link gets a new
+// viewer — mirrors ShareLinkNotificationInfo, scoped to the specific
+// document viewed (a room link can cover several).
+export interface DataRoomLinkNotificationInfo {
+  owner_email: string;
+  data_room_id: string;
+  data_room_name: string;
+  document_id: string;
+  document_title: string;
+  link_label: string | null;
+  notify_on_view: boolean;
 }
 
 // Shared shape every paginated model function takes, computed once by
@@ -1056,12 +1143,32 @@ export interface DataRoomLinkModel {
   getByToken(
     token: string,
     password?: string,
+    email?: string,
+    name?: string,
   ): Promise<DataRoomLinkWithDocuments>;
   getFileByToken(
     token: string,
     documentId: string,
     password?: string,
+    email?: string,
+    name?: string,
   ): Promise<{ storage_key: string; mime_type: string }>;
+  validateToken(token: string): Promise<{ id: string }>;
+  getNdaText(token: string): Promise<string | null>;
+  getNotificationInfo(
+    dataRoomLinkId: string,
+    documentId: string,
+  ): Promise<DataRoomLinkNotificationInfo | null>;
+}
+
+export interface DataRoomLinkViewModel {
+  recordView(
+    token: string,
+    input: DataRoomLinkViewCreateInput,
+  ): Promise<RecordedDataRoomLinkView>;
+  getStatsByDataRoomId(
+    dataRoomId: string,
+  ): Promise<Map<string, { view_count: number; last_viewed_at: Date | null }>>;
 }
 
 export interface DatabaseModel {

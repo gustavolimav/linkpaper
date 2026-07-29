@@ -7,52 +7,58 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { parseAllowedEmails } from "@/lib/parseAllowedEmails";
-import type { DataRoomLinkResponse } from "@/types/index";
+import type {
+  DataRoomLinkResponse,
+  DataRoomLinkUpdateInput,
+} from "@/types/index";
 
-interface CreateDataRoomLinkModalProps {
+interface EditDataRoomLinkModalProps {
   dataRoomId: string;
-  onCreated: (link: DataRoomLinkResponse) => void;
+  link: DataRoomLinkResponse;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSaved: (link: DataRoomLinkResponse) => void;
 }
 
-export function CreateDataRoomLinkModal({
+export function EditDataRoomLinkModal({
   dataRoomId,
-  onCreated,
-}: CreateDataRoomLinkModalProps) {
-  const [open, setOpen] = useState(false);
-  const [label, setLabel] = useState("");
+  link,
+  open,
+  onOpenChange,
+  onSaved,
+}: EditDataRoomLinkModalProps) {
+  const [label, setLabel] = useState(link.label ?? "");
   const [password, setPassword] = useState("");
-  const [expiresAt, setExpiresAt] = useState("");
-  const [requireEmail, setRequireEmail] = useState(false);
-  const [allowedEmailsText, setAllowedEmailsText] = useState("");
-  const [notifyOnView, setNotifyOnView] = useState(true);
-  const [watermarkEnabled, setWatermarkEnabled] = useState(false);
-  const [ndaText, setNdaText] = useState("");
-  const [brandAccentColor, setBrandAccentColor] = useState("");
-  const [brandWelcomeMessage, setBrandWelcomeMessage] = useState("");
+  const [clearPassword, setClearPassword] = useState(false);
+  const [expiresAt, setExpiresAt] = useState(
+    link.expires_at ? new Date(link.expires_at).toISOString().slice(0, 10) : "",
+  );
+  const [isActive, setIsActive] = useState(link.is_active);
+  const [requireEmail, setRequireEmail] = useState(link.require_email);
+  const [allowedEmailsText, setAllowedEmailsText] = useState(
+    link.allowed_emails.join("\n"),
+  );
+  const [notifyOnView, setNotifyOnView] = useState(link.notify_on_view);
+  const [watermarkEnabled, setWatermarkEnabled] = useState(
+    link.watermark_enabled,
+  );
+  const [ndaText, setNdaText] = useState(link.nda_text ?? "");
+  const [brandAccentColor, setBrandAccentColor] = useState(
+    link.brand_accent_color ?? "",
+  );
+  const [brandWelcomeMessage, setBrandWelcomeMessage] = useState(
+    link.brand_welcome_message ?? "",
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  function reset() {
-    setLabel("");
-    setPassword("");
-    setExpiresAt("");
-    setRequireEmail(false);
-    setAllowedEmailsText("");
-    setNotifyOnView(true);
-    setWatermarkEnabled(false);
-    setNdaText("");
-    setBrandAccentColor("");
-    setBrandWelcomeMessage("");
-    setError(null);
-  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -60,103 +66,97 @@ export function CreateDataRoomLinkModal({
     setIsSubmitting(true);
 
     try {
-      const allowedEmails = parseAllowedEmails(allowedEmailsText);
-
-      const body: Record<string, unknown> = {
+      const body: DataRoomLinkUpdateInput = {
+        label: label || null,
+        is_active: isActive,
         require_email: requireEmail,
         notify_on_view: notifyOnView,
         watermark_enabled: watermarkEnabled,
-        ...(allowedEmails.length > 0 && { allowed_emails: allowedEmails }),
+        allowed_emails: parseAllowedEmails(allowedEmailsText),
+        nda_text: ndaText || null,
+        brand_accent_color: brandAccentColor || null,
+        brand_welcome_message: brandWelcomeMessage || null,
+        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
       };
 
-      if (label) {
-        body.label = label;
-      }
-
-      if (password) {
+      if (clearPassword) {
+        body.password = null;
+      } else if (password) {
         body.password = password;
       }
 
-      if (expiresAt) {
-        body.expires_at = new Date(expiresAt).toISOString();
-      }
-
-      if (ndaText) {
-        body.nda_text = ndaText;
-      }
-
-      if (brandAccentColor) {
-        body.brand_accent_color = brandAccentColor;
-      }
-
-      if (brandWelcomeMessage) {
-        body.brand_welcome_message = brandWelcomeMessage;
-      }
-
-      const response = await fetch(`/api/v1/data-rooms/${dataRoomId}/links`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const response = await fetch(
+        `/api/v1/data-rooms/${dataRoomId}/links/${link.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
 
       if (!response.ok) {
         const responseBody = await response.json().catch(() => null);
-        setError(responseBody?.message ?? "Não foi possível criar o link.");
+        setError(
+          responseBody?.message ?? "Não foi possível salvar as alterações.",
+        );
         return;
       }
 
-      const created = await response.json();
-      onCreated(created);
-      reset();
-      setOpen(false);
+      const updated = await response.json();
+      onSaved(updated);
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) {
-          reset();
-        }
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button type="button">Criar link</Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Criar link da data room</DialogTitle>
+          <DialogTitle>Editar link da data room</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="-mx-1 flex-1 space-y-4 overflow-y-auto px-1">
             <div className="space-y-2">
-              <Label htmlFor="dataRoomLinkLabel">Rótulo (opcional)</Label>
+              <Label htmlFor="edit-dr-label">Rótulo</Label>
               <Input
-                id="dataRoomLinkLabel"
+                id="edit-dr-label"
                 value={label}
                 onChange={(event) => setLabel(event.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="dataRoomLinkPassword">Senha (opcional)</Label>
+              <Label htmlFor="edit-dr-password">Nova senha</Label>
               <Input
-                id="dataRoomLinkPassword"
+                id="edit-dr-password"
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                disabled={clearPassword}
+                placeholder={
+                  link.has_password
+                    ? "Deixe em branco para manter a atual"
+                    : "Sem senha"
+                }
               />
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="edit-dr-clear-password"
+                  checked={clearPassword}
+                  onCheckedChange={(checked) =>
+                    setClearPassword(checked === true)
+                  }
+                />
+                <Label htmlFor="edit-dr-clear-password">Remover senha</Label>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="drLinkExpiresAt">Expiração (opcional)</Label>
+              <Label htmlFor="edit-dr-expiresAt">Expiração</Label>
               <Input
-                id="drLinkExpiresAt"
+                id="edit-dr-expiresAt"
                 type="date"
                 value={expiresAt}
                 onChange={(event) => setExpiresAt(event.target.value)}
@@ -165,19 +165,30 @@ export function CreateDataRoomLinkModal({
 
             <div className="flex items-center gap-2">
               <Switch
-                id="drRequireEmail"
+                id="edit-dr-isActive"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
+              <Label htmlFor="edit-dr-isActive">Link ativo</Label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Switch
+                id="edit-dr-requireEmail"
                 checked={requireEmail}
                 onCheckedChange={setRequireEmail}
               />
-              <Label htmlFor="drRequireEmail">Exigir email do visitante</Label>
+              <Label htmlFor="edit-dr-requireEmail">
+                Exigir email do visitante
+              </Label>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="drAllowedEmails">
-                Lista de emails permitidos (opcional)
+              <Label htmlFor="edit-dr-allowedEmails">
+                Lista de emails permitidos
               </Label>
               <Textarea
-                id="drAllowedEmails"
+                id="edit-dr-allowedEmails"
                 value={allowedEmailsText}
                 onChange={(event) => setAllowedEmailsText(event.target.value)}
                 placeholder="um@exemplo.com&#10;outro@exemplo.com"
@@ -185,38 +196,39 @@ export function CreateDataRoomLinkModal({
               />
               <p className="text-xs text-muted-foreground">
                 Um email por linha. Se preenchido, só esses emails poderão
-                acessar o link (mesmo com a senha correta).
+                acessar o link (mesmo com a senha correta). Deixe em branco para
+                não restringir.
               </p>
             </div>
 
             <div className="flex items-center gap-2">
               <Switch
-                id="drNotifyOnView"
+                id="edit-dr-notifyOnView"
                 checked={notifyOnView}
                 onCheckedChange={setNotifyOnView}
               />
-              <Label htmlFor="drNotifyOnView">
+              <Label htmlFor="edit-dr-notifyOnView">
                 Notificar por e-mail ao ser visualizado
               </Label>
             </div>
 
             <div className="flex items-center gap-2">
               <Switch
-                id="drWatermarkEnabled"
+                id="edit-dr-watermarkEnabled"
                 checked={watermarkEnabled}
                 onCheckedChange={setWatermarkEnabled}
               />
-              <Label htmlFor="drWatermarkEnabled">
+              <Label htmlFor="edit-dr-watermarkEnabled">
                 Marca d&apos;água com email do visitante
               </Label>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="drNdaText">
-                Termo de confidencialidade (opcional)
+              <Label htmlFor="edit-dr-ndaText">
+                Termo de confidencialidade
               </Label>
               <Textarea
-                id="drNdaText"
+                id="edit-dr-ndaText"
                 value={ndaText}
                 onChange={(event) => setNdaText(event.target.value)}
                 placeholder="Cole aqui o texto que o visitante deve aceitar antes de ver os documentos"
@@ -224,17 +236,16 @@ export function CreateDataRoomLinkModal({
               />
               <p className="text-xs text-muted-foreground">
                 Se preenchido, o visitante precisa informar nome e email e
-                aceitar este termo antes de acessar a data room.
+                aceitar este termo antes de acessar a data room. Deixe em branco
+                para remover a exigência.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="drBrandAccentColor">
-                Cor de destaque (opcional)
-              </Label>
+              <Label htmlFor="edit-dr-brandAccentColor">Cor de destaque</Label>
               <div className="flex items-center gap-2">
                 <Input
-                  id="drBrandAccentColor"
+                  id="edit-dr-brandAccentColor"
                   type="color"
                   value={brandAccentColor || "#000000"}
                   onChange={(event) => setBrandAccentColor(event.target.value)}
@@ -254,11 +265,11 @@ export function CreateDataRoomLinkModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="drBrandWelcomeMessage">
-                Mensagem de boas-vindas (opcional)
+              <Label htmlFor="edit-dr-brandWelcomeMessage">
+                Mensagem de boas-vindas
               </Label>
               <Textarea
-                id="drBrandWelcomeMessage"
+                id="edit-dr-brandWelcomeMessage"
                 value={brandWelcomeMessage}
                 onChange={(event) => setBrandWelcomeMessage(event.target.value)}
                 placeholder="Ex: Olá! Segue a documentação da rodada, qualquer dúvida me chama."
@@ -275,7 +286,7 @@ export function CreateDataRoomLinkModal({
 
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Criando..." : "Criar link"}
+              {isSubmitting ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </form>

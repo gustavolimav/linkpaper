@@ -14,9 +14,20 @@ interface ChatPanelProps {
   token: string;
   headers: HeadersInit;
   onClose: () => void;
+  // Lets a caller with a different chat route (e.g. a data room, which
+  // needs a document_id in the body since one link covers several
+  // documents) reuse this component instead of forking it.
+  endpoint?: string;
+  extraBody?: Record<string, unknown>;
 }
 
-export function ChatPanel({ token, headers, onClose }: ChatPanelProps) {
+export function ChatPanel({
+  token,
+  headers,
+  onClose,
+  endpoint,
+  extraBody,
+}: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [question, setQuestion] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -40,10 +51,10 @@ export function ChatPanel({ token, headers, onClose }: ChatPanelProps) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/v1/share/${token}/chat`, {
+      const response = await fetch(endpoint ?? `/api/v1/share/${token}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify({ question: trimmed }),
+        body: JSON.stringify({ question: trimmed, ...extraBody }),
       });
 
       if (!response.ok || !response.body) {

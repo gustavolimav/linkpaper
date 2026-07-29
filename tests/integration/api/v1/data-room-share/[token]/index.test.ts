@@ -162,4 +162,140 @@ describe("GET /api/v1/data-room-share/[token]", () => {
     );
     expect(withCorrectPassword.status).toBe(200);
   });
+
+  test("With require_email set, requires a valid email", async () => {
+    const { cookie } = await orchestrator.createUserSession();
+    const document = await orchestrator.uploadDocument(cookie);
+    const room = await orchestrator.createDataRoom(
+      cookie,
+      document.workspace_id,
+      { document_ids: [document.id] },
+    );
+    const link = await orchestrator.createDataRoomLink(cookie, room.id, {
+      require_email: true,
+    });
+
+    const withoutEmail = await fetch(
+      `http://localhost:3000/api/v1/data-room-share/${link.token}`,
+    );
+    expect(withoutEmail.status).toBe(403);
+
+    const withEmail = await fetch(
+      `http://localhost:3000/api/v1/data-room-share/${link.token}`,
+      { headers: { "X-Viewer-Email": "investor@example.com" } },
+    );
+    expect(withEmail.status).toBe(200);
+  });
+
+  test("With an allow-list, rejects an email not on it", async () => {
+    const { cookie } = await orchestrator.createUserSession();
+    const document = await orchestrator.uploadDocument(cookie);
+    const room = await orchestrator.createDataRoom(
+      cookie,
+      document.workspace_id,
+      { document_ids: [document.id] },
+    );
+    const link = await orchestrator.createDataRoomLink(cookie, room.id, {
+      allowed_emails: ["approved@example.com"],
+    });
+
+    const notAllowed = await fetch(
+      `http://localhost:3000/api/v1/data-room-share/${link.token}`,
+      { headers: { "X-Viewer-Email": "stranger@example.com" } },
+    );
+    expect(notAllowed.status).toBe(403);
+
+    const allowed = await fetch(
+      `http://localhost:3000/api/v1/data-room-share/${link.token}`,
+      { headers: { "X-Viewer-Email": "approved@example.com" } },
+    );
+    expect(allowed.status).toBe(200);
+  });
+
+  test("With an NDA configured, requires name + email acceptance", async () => {
+    const { cookie } = await orchestrator.createUserSession();
+    const document = await orchestrator.uploadDocument(cookie);
+    const room = await orchestrator.createDataRoom(
+      cookie,
+      document.workspace_id,
+      { document_ids: [document.id] },
+    );
+    const link = await orchestrator.createDataRoomLink(cookie, room.id, {
+      nda_text: "Você concorda em manter estes documentos confidenciais.",
+    });
+
+    const withoutAcceptance = await fetch(
+      `http://localhost:3000/api/v1/data-room-share/${link.token}`,
+    );
+    expect(withoutAcceptance.status).toBe(403);
+    const body = await withoutAcceptance.json();
+    expect(body.message).toBe("Aceite os termos para continuar.");
+
+    const ndaResponse = await fetch(
+      `http://localhost:3000/api/v1/data-room-share/${link.token}/nda`,
+    );
+    const ndaBody = await ndaResponse.json();
+    expect(ndaBody.nda_text).toBe(
+      "Você concorda em manter estes documentos confidenciais.",
+    );
+
+    const withAcceptance = await fetch(
+      `http://localhost:3000/api/v1/data-room-share/${link.token}`,
+      {
+        headers: {
+          "X-Viewer-Email": "investor@example.com",
+          "X-Viewer-Name": "Investidor",
+        },
+      },
+    );
+    expect(withAcceptance.status).toBe(200);
+  });
+
+  test("watermark_enabled implies an email is required", async () => {
+    const { cookie } = await orchestrator.createUserSession();
+    const document = await orchestrator.uploadDocument(cookie);
+    const room = await orchestrator.createDataRoom(
+      cookie,
+      document.workspace_id,
+      { document_ids: [document.id] },
+    );
+    const link = await orchestrator.createDataRoomLink(cookie, room.id, {
+      watermark_enabled: true,
+    });
+
+    const withoutEmail = await fetch(
+      `http://localhost:3000/api/v1/data-room-share/${link.token}`,
+    );
+    expect(withoutEmail.status).toBe(403);
+
+    const withEmail = await fetch(
+      `http://localhost:3000/api/v1/data-room-share/${link.token}`,
+      { headers: { "X-Viewer-Email": "investor@example.com" } },
+    );
+    expect(withEmail.status).toBe(200);
+    const body = await withEmail.json();
+    expect(body.watermark_enabled).toBe(true);
+  });
+
+  test("Custom branding round-trips through the public response", async () => {
+    const { cookie } = await orchestrator.createUserSession();
+    const document = await orchestrator.uploadDocument(cookie);
+    const room = await orchestrator.createDataRoom(
+      cookie,
+      document.workspace_id,
+      { document_ids: [document.id] },
+    );
+    const link = await orchestrator.createDataRoomLink(cookie, room.id, {
+      brand_accent_color: "#ff0000",
+      brand_welcome_message: "Bem-vindo à nossa data room.",
+    });
+
+    const response = await fetch(
+      `http://localhost:3000/api/v1/data-room-share/${link.token}`,
+    );
+    const body = await response.json();
+
+    expect(body.brand_accent_color).toBe("#ff0000");
+    expect(body.brand_welcome_message).toBe("Bem-vindo à nossa data room.");
+  });
 });

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { Check, Copy, Trash2 } from "lucide-react";
+import { Check, Copy, Pencil, Trash2 } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import { useWorkspaces } from "@/lib/useWorkspaces";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ManageDataRoomDocumentsModal } from "@/components/data-rooms/ManageDataRoomDocumentsModal";
 import { CreateDataRoomLinkModal } from "@/components/data-rooms/CreateDataRoomLinkModal";
+import { EditDataRoomLinkModal } from "@/components/data-rooms/EditDataRoomLinkModal";
 import type { DataRoomResponse, DataRoomLinkResponse } from "@/types/index";
 
 interface DataRoomDetailProps {
@@ -51,6 +52,9 @@ export function DataRoomDetail({ id }: DataRoomDetailProps) {
   const canEdit = activeWorkspace?.role !== "viewer";
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const [editingLink, setEditingLink] = useState<DataRoomLinkResponse | null>(
+    null,
+  );
 
   const { data: room, mutate: mutateRoom } = useSWR<DataRoomResponse>(
     `/api/v1/data-rooms/${id}`,
@@ -218,6 +222,8 @@ export function DataRoomDetail({ id }: DataRoomDetailProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Título</TableHead>
+                <TableHead>Visualizações</TableHead>
+                <TableHead>Última visualização</TableHead>
                 <TableHead>Permitir download</TableHead>
               </TableRow>
             </TableHeader>
@@ -226,6 +232,14 @@ export function DataRoomDetail({ id }: DataRoomDetailProps) {
                 <TableRow key={document.document_id}>
                   <TableCell className="font-medium">
                     {document.title}
+                  </TableCell>
+                  <TableCell>{document.view_count}</TableCell>
+                  <TableCell>
+                    {document.last_viewed_at
+                      ? new Date(document.last_viewed_at).toLocaleString(
+                          "pt-BR",
+                        )
+                      : "—"}
                   </TableCell>
                   <TableCell>
                     <Switch
@@ -304,6 +318,16 @@ export function DataRoomDetail({ id }: DataRoomDetailProps) {
                           </>
                         )}
                       </Button>
+                      {canEdit && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingLink(link)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" /> Editar
+                        </Button>
+                      )}
                       {canEdit && link.is_active && (
                         <Button
                           type="button"
@@ -322,6 +346,24 @@ export function DataRoomDetail({ id }: DataRoomDetailProps) {
           </div>
         )}
       </section>
+
+      {editingLink && (
+        <EditDataRoomLinkModal
+          dataRoomId={id}
+          link={editingLink}
+          open={editingLink !== null}
+          onOpenChange={(next) => {
+            if (!next) {
+              setEditingLink(null);
+            }
+          }}
+          onSaved={() => {
+            setEditingLink(null);
+            mutateLinks();
+            toast.success("Link atualizado.");
+          }}
+        />
+      )}
     </div>
   );
 }

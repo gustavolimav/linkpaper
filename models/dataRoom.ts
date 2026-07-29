@@ -1,10 +1,11 @@
 import database from "../infra/database";
 import { NotFoundError, ValidationError } from "../infra/errors";
 import workspace from "./workspace";
+import dataRoomLinkView from "./dataRoomLinkView";
 import type {
   DataRoom,
   DataRoomResponse,
-  DataRoomDocumentSummary,
+  DataRoomDocumentWithStats,
   DataRoomCreateInput,
   DataRoomUpdateInput,
   DataRoomSummary,
@@ -42,11 +43,18 @@ async function findRoomRaw(id: string): Promise<DataRoom> {
   return room;
 }
 
+// Owner-facing only — attaches each document's view_count/last_viewed_at
+// (US-56), aggregated across every link of this room. The public
+// data-room-share routes use dataRoomLink.ts's own getRoomDocuments
+// instead, which never exposes view stats to a visitor.
 async function getDocuments(
   dataRoomId: string,
-): Promise<DataRoomDocumentSummary[]> {
-  const results = await database.query<DataRoomDocumentSummary>({
-    text: `
+): Promise<DataRoomDocumentWithStats[]> {
+  const [results, stats] = await Promise.all([
+    database.query<
+      Omit<DataRoomDocumentWithStats, "view_count" | "last_viewed_at">
+    >({
+      text: `
         SELECT
           documents.id AS document_id,
           documents.title,
@@ -63,10 +71,16 @@ async function getDocuments(
         ORDER BY
           data_room_documents.added_at ASC
         ;`,
-    values: [dataRoomId],
-  });
+      values: [dataRoomId],
+    }),
+    dataRoomLinkView.getStatsByDataRoomId(dataRoomId),
+  ]);
 
-  return results.rows;
+  return results.rows.map((row) => ({
+    ...row,
+    view_count: stats.get(row.document_id)?.view_count ?? 0,
+    last_viewed_at: stats.get(row.document_id)?.last_viewed_at ?? null,
+  }));
 }
 
 // Every document_id must exist, not be soft-deleted, and belong to the
