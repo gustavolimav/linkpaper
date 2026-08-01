@@ -318,7 +318,7 @@ export function DataRoomDetail({ id }: DataRoomDetailProps) {
                           </>
                         )}
                       </Button>
-                      {canEdit && (
+                      {canEdit && link.is_active && (
                         <Button
                           type="button"
                           variant="ghost"
