@@ -203,15 +203,15 @@ T7 → T8
 
 **Done when**:
 
-- [ ] `getFileByToken`'s `SELECT` in `models/dataRoomLink.ts` includes `data_room_documents.allow_download`; `assertDownloadAllowed` throws `ForbiddenError` (pt-BR, room-flavoured `action` text) when `!allow_download && mime_type !== "application/pdf"`, called after the not-found check and before the function returns
-- [ ] Extended tests in `tests/integration/api/v1/data-room-share/[token]/file/index.test.ts`, using a non-PDF document upload (asserting its `mime_type` is really non-PDF) added to a data room via `document_ids`:
+- [x] `getFileByToken`'s `SELECT` in `models/dataRoomLink.ts` includes `data_room_documents.allow_download`; `assertDownloadAllowed` throws `ForbiddenError` (pt-BR, room-flavoured `action` text) when `!allow_download && mime_type !== "application/pdf"`, called after the not-found check and before the function returns
+- [x] Extended tests in `tests/integration/api/v1/data-room-share/[token]/file/index.test.ts`, using a non-PDF document upload (asserting its `mime_type` is really non-PDF) added to a data room via `document_ids`:
   - `allow_download: false` on that document → `GET .../file?document_id=...` returns `403`, no file bytes (DL-06)
   - `allow_download: true` → `200` with bytes (DL-07)
   - a PDF document with `allow_download: false` → `200` with bytes (DL-08)
   - existing missing/foreign `document_id` tests in this file still pass unmodified, confirming those checks still run before the new guard (DL-11)
   - no row is written to `blocked_download_attempts` for a data-room blocked attempt (DL-17) - a query via `database` (or a follow-on `GET /api/v1/activity` call for that workspace showing zero `blocked_download` events) confirms this
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: existing file's test count + at least 4 new tests, all passing (no silent deletions)
+- [x] Gate check passes: `npm test`
+- [x] Test count: existing file's test count + at least 4 new tests, all passing (no silent deletions)
 
 **Tests**: integration
 **Gate**: full
