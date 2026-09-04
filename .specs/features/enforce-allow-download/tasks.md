@@ -142,16 +142,16 @@ T7 → T8
 
 **Done when**:
 
-- [ ] `models/blockedDownload.ts` exports a default `blockedDownload` object with `record`, matching `design.md` Component 2 exactly
-- [ ] `models/shareLink.ts#getFileByToken` returns `403` (via `denyDownload`) when `!allow_download && mime_type !== "application/pdf"`, and falls through to the existing return otherwise; `denyDownload` awaits the audit write with `.catch(() => undefined)` before throwing (AD-007)
-- [ ] New test file `tests/integration/api/v1/share/[token]/file/index.test.ts` asserts, using `orchestrator.uploadDocument(cookie, { mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", filename: "a.docx", buffer: Buffer.from("fake docx bytes") })`:
+- [x] `models/blockedDownload.ts` exports a default `blockedDownload` object with `record`, matching `design.md` Component 2 exactly
+- [x] `models/shareLink.ts#getFileByToken` returns `403` (via `denyDownload`) when `!allow_download && mime_type !== "application/pdf"`, and falls through to the existing return otherwise; `denyDownload` awaits the audit write with `.catch(() => undefined)` before throwing (AD-007)
+- [x] New test file `tests/integration/api/v1/share/[token]/file/index.test.ts` asserts, using `orchestrator.uploadDocument(cookie, { mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", filename: "a.docx", buffer: Buffer.from("fake docx bytes") })`:
   - the uploaded document's `mime_type` really is the non-PDF value (guards against the test passing vacuously)
   - a link with `allow_download: false` on that document → `GET .../file` returns `403`, response body has no file bytes, `message`/`action` are in pt-BR (DL-01, DL-05)
   - the same link with `allow_download: true` → `GET .../file` returns `200` with the file bytes (DL-02)
   - a PDF document (default `orchestrator.uploadDocument` fixture) with `allow_download: false` → `GET .../file` returns `200` with the file bytes (DL-03)
   - a blocked attempt is persisted even when the audit write path is exercised via a normal request (no `X-Viewer-Email`/`X-Viewer-Name` headers) - the `403` still returns (DL-13, DL-16 covered here at the enforcement layer; full persistence/surfacing assertion happens in T7)
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: existing suite count + at least 5 new tests in the new file, all passing (no silent deletions)
+- [x] Gate check passes: `npm test`
+- [x] Test count: existing suite count + at least 5 new tests in the new file, all passing (no silent deletions)
 
 **Tests**: integration
 **Gate**: full
