@@ -125,7 +125,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DL-01          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
 | DL-02          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
 | DL-03          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
-| DL-04          | P1: Share-link file endpoint enforcement        | Tasks   | In Tasks     |
+| DL-04          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
 | DL-05          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
 | DL-06          | P1: Data-room file endpoint + Visualizar bypass | Tasks   | In Tasks     |
 | DL-07          | P1: Data-room file endpoint + Visualizar bypass | Tasks   | In Tasks     |
@@ -145,7 +145,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 18 total, 18 mapped to tasks (T1-T8), 7 Implementing (T3), 11 In Tasks (pending T4-T8)
+**Coverage:** 18 total, 18 mapped to tasks (T1-T8), 8 Implementing (T3-T4), 10 In Tasks (pending T5-T8)
 
 ---
 
