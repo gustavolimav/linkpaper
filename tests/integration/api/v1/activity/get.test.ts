@@ -130,6 +130,134 @@ describe("GET /api/v1/activity", () => {
       expect(responseBody.events[1].event_type).toBe("link_created");
     });
 
+    test("A blocked_download event appears with the requester's name/email, interleaved by created_at DESC", async () => {
+      const { cookie } = await orchestrator.createUserSession();
+      const document = await orchestrator.uploadDocument(cookie, {
+        title: "Confidential.docx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename: "a.docx",
+        buffer: Buffer.from("fake docx bytes"),
+      });
+      const link = await orchestrator.createShareLink(cookie, document.id, {
+        allow_download: false,
+      });
+
+      const fileResponse = await fetch(
+        `http://localhost:3000/api/v1/share/${link.token}/file`,
+        {
+          headers: {
+            "X-Viewer-Email": "blocked@example.com",
+            "X-Viewer-Name": "Blocked Visitor",
+          },
+        },
+      );
+      expect(fileResponse.status).toBe(403);
+
+      const response = await fetch("http://localhost:3000/api/v1/activity", {
+        headers: { Cookie: cookie },
+      });
+      const responseBody = await response.json();
+
+      const blockedEvents = responseBody.events.filter(
+        (event: { event_type: string }) =>
+          event.event_type === "blocked_download",
+      );
+      expect(blockedEvents).toHaveLength(1);
+      expect(blockedEvents[0]).toMatchObject({
+        document_id: document.id,
+        document_title: "Confidential.docx",
+        actor_name: "Blocked Visitor",
+        actor_email: "blocked@example.com",
+      });
+
+      // interleaved correctly among the other event (link_created) by
+      // created_at DESC: the blocked attempt happened after link creation
+      expect(responseBody.events[0].event_type).toBe("blocked_download");
+      expect(responseBody.events[1].event_type).toBe("link_created");
+    });
+
+    test("A blocked_download event with no viewer headers still appears, with actor fields null", async () => {
+      const { cookie } = await orchestrator.createUserSession();
+      const document = await orchestrator.uploadDocument(cookie, {
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename: "a.docx",
+        buffer: Buffer.from("fake docx bytes"),
+      });
+      const link = await orchestrator.createShareLink(cookie, document.id, {
+        allow_download: false,
+      });
+
+      const fileResponse = await fetch(
+        `http://localhost:3000/api/v1/share/${link.token}/file`,
+        { headers: {} },
+      );
+      expect(fileResponse.status).toBe(403);
+
+      const response = await fetch("http://localhost:3000/api/v1/activity", {
+        headers: { Cookie: cookie },
+      });
+      const responseBody = await response.json();
+
+      const blockedEvent = responseBody.events.find(
+        (event: { event_type: string }) =>
+          event.event_type === "blocked_download",
+      );
+      expect(blockedEvent).toMatchObject({
+        document_id: document.id,
+        actor_name: null,
+        actor_email: null,
+      });
+    });
+
+    test("Flipping allow_download to true afterwards does not remove or alter the persisted blocked_download event", async () => {
+      const { cookie } = await orchestrator.createUserSession();
+      const document = await orchestrator.uploadDocument(cookie, {
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename: "a.docx",
+        buffer: Buffer.from("fake docx bytes"),
+      });
+      const link = await orchestrator.createShareLink(cookie, document.id, {
+        allow_download: false,
+      });
+
+      await fetch(`http://localhost:3000/api/v1/share/${link.token}/file`);
+
+      const beforeResponse = await fetch(
+        "http://localhost:3000/api/v1/activity",
+        { headers: { Cookie: cookie } },
+      );
+      const beforeBody = await beforeResponse.json();
+      const beforeEvent = beforeBody.events.find(
+        (event: { event_type: string }) =>
+          event.event_type === "blocked_download",
+      );
+      expect(beforeEvent).toBeDefined();
+
+      await fetch(
+        `http://localhost:3000/api/v1/documents/${document.id}/links/${link.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Cookie: cookie },
+          body: JSON.stringify({ allow_download: true }),
+        },
+      );
+
+      const afterResponse = await fetch(
+        "http://localhost:3000/api/v1/activity",
+        { headers: { Cookie: cookie } },
+      );
+      const afterBody = await afterResponse.json();
+      const afterEvent = afterBody.events.find(
+        (event: { event_type: string }) =>
+          event.event_type === "blocked_download",
+      );
+
+      expect(afterEvent).toEqual(beforeEvent);
+    });
+
     test("Does not include another workspace's activity", async () => {
       const { cookie: ownerCookie } = await orchestrator.createUserSession();
       const { cookie: strangerCookie } = await orchestrator.createUserSession();

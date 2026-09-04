@@ -135,17 +135,17 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DL-11          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
 | DL-12          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 | DL-13          | P2: Persist + surface blocked-download events   | Execute | Implementing |
-| DL-14          | P2: Persist + surface blocked-download events   | Tasks   | In Tasks     |
-| DL-15          | P2: Persist + surface blocked-download events   | Tasks   | In Tasks     |
+| DL-14          | P2: Persist + surface blocked-download events   | Execute | Implementing |
+| DL-15          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 | DL-16          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 | DL-17          | P2: Persist + surface blocked-download events   | Execute | Implementing |
-| DL-18          | P2: Persist + surface blocked-download events   | Tasks   | In Tasks     |
+| DL-18          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 
 **ID format:** `[CATEGORY]-[NUMBER]` (`DL` = download-lock enforcement)
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 18 total, 18 mapped to tasks (T1-T8), 14 Implementing (T3-T6), 4 In Tasks (pending T7-T8)
+**Coverage:** 18 total, 18 mapped to tasks (T1-T8), 17 Implementing (T3-T7), 1 In Tasks (pending T8)
 
 ---
 
