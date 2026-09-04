@@ -296,10 +296,10 @@ T7 → T8
 
 **Done when**:
 
-- [ ] `actionTextFor` returns `"teve um download bloqueado em"` for `event.event_type === "blocked_download"`, checked before the generic fallback
-- [ ] `detailFor` returns `"Download não permitido neste link"` for the same event type, checked before the generic fallback
-- [ ] `npm run sf` and `npx tsc --noEmit` both exit 0
-- [ ] Manual verification against `design.md` Component 8's exact code (no automated test exists for this layer per the Test Coverage Matrix - T7's integration test already asserts the underlying `event_type` value the component switches on)
+- [x] `actionTextFor` returns `"teve um download bloqueado em"` for `event.event_type === "blocked_download"`, checked before the generic fallback
+- [x] `detailFor` returns `"Download não permitido neste link"` for the same event type, checked before the generic fallback
+- [x] `npm run sf` and `npx tsc --noEmit` both exit 0
+- [x] Manual verification against `design.md` Component 8's exact code (no automated test exists for this layer per the Test Coverage Matrix - T7's integration test already asserts the underlying `event_type` value the component switches on)
 
 **Tests**: none
 **Gate**: build

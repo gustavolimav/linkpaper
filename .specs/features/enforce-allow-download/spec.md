@@ -145,7 +145,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 18 total, 18 mapped to tasks (T1-T8), 17 Implementing (T3-T7), 1 In Tasks (pending T8)
+**Coverage:** 18 total, 18 mapped to tasks (T1-T8), 18 Implementing (T1-T8 all committed) - pending Verifier for "Verified" status
 
 ---
 

@@ -46,12 +46,18 @@ function actionTextFor(event: ActivityEvent): string {
   if (event.event_type === "link_created") {
     return "criou um link para";
   }
+  if (event.event_type === "blocked_download") {
+    return "teve um download bloqueado em";
+  }
   return event.is_revisit ? "revisitou" : "visualizou";
 }
 
 function detailFor(event: ActivityEvent): string | null {
   if (event.event_type === "link_created") {
     return event.link_label;
+  }
+  if (event.event_type === "blocked_download") {
+    return "Download não permitido neste link";
   }
 
   const time = formatDuration(event.time_on_page);
