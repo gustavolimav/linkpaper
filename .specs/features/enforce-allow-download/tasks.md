@@ -175,9 +175,9 @@ T7 → T8
 
 **Done when**:
 
-- [ ] New test in `tests/integration/api/v1/share/[token]/index.test.ts` uploads a non-PDF document (asserts `document.mime_type !== "application/pdf"`), creates a link with `allow_download: false`, and asserts `GET /api/v1/share/[token]` returns `200` (not `403`) with the document's non-PDF `mime_type` present in the response body
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: existing file's test count + 1, all passing (no silent deletions)
+- [x] New test in `tests/integration/api/v1/share/[token]/index.test.ts` uploads a non-PDF document (asserts `document.mime_type !== "application/pdf"`), creates a link with `allow_download: false`, and asserts `GET /api/v1/share/[token]` returns `200` (not `403`) with the document's non-PDF `mime_type` present in the response body
+- [x] Gate check passes: `npm test`
+- [x] Test count: existing file's test count + 1, all passing (no silent deletions)
 
 **Tests**: integration
 **Gate**: full

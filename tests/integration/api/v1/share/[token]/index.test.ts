@@ -96,6 +96,36 @@ describe("GET /api/v1/share/[token]", () => {
     });
   });
 
+  // Regression pin (design.md's Risks table, row 1): the allow_download
+  // guard added to getFileByToken (models/shareLink.ts) must never migrate
+  // into fetchAndValidateTokenRow, the validator this metadata endpoint
+  // shares with the file endpoint — that would 403 the viewer page itself
+  // for every non-PDF, view-only link instead of just the file download.
+  test("A non-PDF, allow_download: false link still returns 200 (allow_download is not enforced here)", async () => {
+    const { cookie } = await orchestrator.createUserSession();
+    const document = await orchestrator.uploadDocument(cookie, {
+      mimeType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      filename: "a.docx",
+      buffer: Buffer.from("fake docx bytes"),
+    });
+
+    expect(document.mime_type).not.toBe("application/pdf");
+
+    const link = await orchestrator.createShareLink(cookie, document.id, {
+      allow_download: false,
+    });
+
+    const response = await fetch(
+      `http://localhost:3000/api/v1/share/${link.token}`,
+    );
+
+    expect(response.status).toBe(200);
+
+    const responseBody = await response.json();
+    expect(responseBody.document.mime_type).toBe(document.mime_type);
+  });
+
   test("With an AI key configured by the document owner", async () => {
     const { user, cookie } = await orchestrator.createUserSession();
     await fetch(`http://localhost:3000/api/v1/users/${user.username}/ai-key`, {
