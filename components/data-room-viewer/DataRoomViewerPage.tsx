@@ -482,43 +482,61 @@ export function DataRoomViewerPage({ token }: DataRoomViewerPageProps) {
               {link.brand_welcome_message}
             </p>
           )}
-          {link.documents.map((doc) => (
-            <div
-              key={doc.document_id}
-              className="flex items-center justify-between gap-3 rounded-md border px-3 py-2"
-            >
-              <span className="truncate text-sm font-medium">{doc.title}</span>
-              <div className="flex shrink-0 gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  disabled={loadingDocumentId === doc.document_id}
-                  onClick={() =>
-                    handleOpenDocument(doc.document_id, doc.mime_type)
-                  }
-                >
-                  <Eye className="h-3.5 w-3.5" /> Visualizar
-                </Button>
-                {doc.allow_download && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={loadingDocumentId === doc.document_id}
-                    onClick={() =>
-                      handleDownload(
-                        doc.document_id,
-                        `${doc.title}${EXTENSION_BY_MIME_TYPE[doc.mime_type] ?? ""}`,
-                      )
-                    }
-                  >
-                    <Download className="h-3.5 w-3.5" /> Baixar
-                  </Button>
-                )}
+          {link.documents.map((doc) => {
+            // A non-PDF document has no inline preview (US-34) —
+            // "Visualizar" just fetches the whole file and hands it to the
+            // browser, which is exactly what allow_download: false
+            // forbids. PDFs keep the action: for them the same fetch is
+            // what renders the document inline (AD-001).
+            const canPreview =
+              doc.mime_type === "application/pdf" || doc.allow_download;
+
+            return (
+              <div
+                key={doc.document_id}
+                className="flex items-center justify-between gap-3 rounded-md border px-3 py-2"
+              >
+                <span className="truncate text-sm font-medium">
+                  {doc.title}
+                </span>
+                <div className="flex shrink-0 gap-1">
+                  {canPreview ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={loadingDocumentId === doc.document_id}
+                      onClick={() =>
+                        handleOpenDocument(doc.document_id, doc.mime_type)
+                      }
+                    >
+                      <Eye className="h-3.5 w-3.5" /> Visualizar
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      Pré-visualização não disponível
+                    </span>
+                  )}
+                  {doc.allow_download && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={loadingDocumentId === doc.document_id}
+                      onClick={() =>
+                        handleDownload(
+                          doc.document_id,
+                          `${doc.title}${EXTENSION_BY_MIME_TYPE[doc.mime_type] ?? ""}`,
+                        )
+                      }
+                    >
+                      <Download className="h-3.5 w-3.5" /> Baixar
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
     </ViewerCardShell>

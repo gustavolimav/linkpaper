@@ -130,7 +130,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DL-06          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
 | DL-07          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
 | DL-08          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
-| DL-09          | P1: Data-room file endpoint + Visualizar bypass | Tasks   | In Tasks     |
+| DL-09          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
 | DL-10          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
 | DL-11          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
 | DL-12          | P2: Persist + surface blocked-download events   | Execute | Implementing |
@@ -145,7 +145,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 18 total, 18 mapped to tasks (T1-T8), 13 Implementing (T3-T5), 5 In Tasks (pending T6-T8)
+**Coverage:** 18 total, 18 mapped to tasks (T1-T8), 14 Implementing (T3-T6), 4 In Tasks (pending T7-T8)
 
 ---
 
