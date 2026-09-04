@@ -22,6 +22,75 @@ tests/          → Integration tests only (hit the live server + real DB)
 
 ---
 
+## Autonomous development workflow (mandatory)
+
+All feature/fix/refactor work — whether done by a human-directed session or an
+autonomous agent cycle — goes through the **`tlc-spec-driven`** methodology,
+vendored at `.claude/skills/tlc-spec-driven/` (from
+[tech-leads-club/agent-skills](https://github.com/tech-leads-club/agent-skills),
+`packages/skills-catalog/skills/(development)/tlc-spec-driven`). Load it by
+name (`Skill` tool) rather than reading its files directly by path. It defines
+four auto-sized phases — **Specify → (Design) → (Tasks) → Execute** — with
+requirements written in EARS notation, requirement IDs traced through to
+tests, one atomic Conventional Commit per task, and deterministic Python
+gates (`scripts/validate_spec.py`, `validate_tasks.py`, `check_commit.py`,
+`validate_state.py`) that must exit `0` before proceeding. Design and Tasks
+are skipped for Small/Medium-sized work; Specify and Execute always run.
+Every feature ends with an **independent Verifier** (author ≠ verifier) that
+re-derives spec coverage from scratch and runs a discrimination-sensor
+mutation test in an isolated `git worktree` (never `git stash`), writing
+`.specs/features/[feature]/validation.md` with a PASS/FAIL verdict before the
+feature is considered done. See the skill's own `SKILL.md` for full rules —
+this section only records how it's wired into this repo.
+
+### The agent team (`.claude/agents/`)
+
+An autonomous cycle is orchestrated by the main session, which dispatches
+role-scoped sub-agents matching the skill's phases:
+
+| Agent               | Phase                | Responsibility                                                             |
+| -------------------- | --------------------- | --------------------------------------------------------------------------------- |
+| `spec-planner`       | Specify (+ Discuss)   | Turns a chosen increment into `spec.md` (EARS ACs, priorities, requirement IDs)   |
+| `architect`          | Design (Large/Complex only) | Architecture, components, data model, file-level plan in `design.md`      |
+| `task-planner`       | Tasks (Large/Complex only)  | Breaks spec/design into atomic tasks + Test Coverage Matrix in `tasks.md` |
+| `implementer`        | Execute (batch worker) | Implements one batch of tasks: test → code → gate → one atomic commit    |
+| `verifier`           | Execute (final step)  | Independent PASS/FAIL verdict; never the same agent/context that implemented |
+
+The orchestrating session never implements code itself when a team is
+running a cycle — it picks the increment, dispatches phases in order, and
+enforces the gates between them. Sub-agent batching for Execute follows the
+skill's own ~7-task-per-worker packing rule; batches run sequentially.
+
+### External dependencies never block autonomous work
+
+If an increment would need a real external account, credential, OAuth
+consent, or other manual dashboard setup (a new payment/email/analytics/OAuth
+provider, etc.) that only Gustavo can complete, an autonomous cycle must
+**never** stop and wait for it. Instead:
+
+1. Implement the feature behind a new or existing feature flag
+   (`models/featureFlag.ts` — see Superadmin section below), **off by
+   default**, exactly like `billing_stripe` today.
+2. Provide a working local stub/mock for the code path exercised when the
+   flag is off (or when the corresponding env var is unset), covered by
+   tests — the same degrade-gracefully pattern already used by
+   `infra/stripe.ts`, `infra/ai.ts`, and the mailer.
+3. Record the exact manual step in `docs/TECH-DEBT.md`: what Gustavo needs to
+   do by hand, which flag/env var to flip afterward, and how to validate it
+   worked. Never leave this undocumented — the flag existing is not enough,
+   the debt must be legible.
+
+### Blast radius for autonomous cycles
+
+An autonomous cycle works on a feature branch with local commits only. It
+never merges or pushes to `main`, never deploys, and never touches a
+production database or credential. Opening a PR (pushing the feature branch
+and running `gh pr create`) is the one remote-visible action a cycle is
+expected to take at the end, once tests/lint/typecheck are green — anything
+beyond that (merging, force-push, infra changes) requires Gustavo.
+
+---
+
 ## Database
 
 - Raw SQL. No ORM. Use `database.query<T>({ text, values })` from `infra/database.ts`.
