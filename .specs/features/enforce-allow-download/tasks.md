@@ -113,10 +113,10 @@ T7 → T8
 
 **Done when**:
 
-- [ ] `BlockedDownloadAttempt`, `BlockedDownloadCreateInput`, `BlockedDownloadModel` added, matching `design.md` Component 6 field-for-field (including nullable `viewer_email`/`viewer_name` on the persisted record, optional on the create input)
-- [ ] `ActivityEvent.event_type` union includes `"blocked_download"`; no other `ActivityEvent` field changed (per design: every other field is already nullable or already meaningful for this type)
-- [ ] Stale comment above `ActivityEvent` (`types/index.ts:200-203`) updated to state blocked-download attempts are now persisted
-- [ ] `npm run sf` and `npx tsc --noEmit` both exit 0
+- [x] `BlockedDownloadAttempt`, `BlockedDownloadCreateInput`, `BlockedDownloadModel` added, matching `design.md` Component 6 field-for-field (including nullable `viewer_email`/`viewer_name` on the persisted record, optional on the create input)
+- [x] `ActivityEvent.event_type` union includes `"blocked_download"`; no other `ActivityEvent` field changed (per design: every other field is already nullable or already meaningful for this type)
+- [x] Stale comment above `ActivityEvent` (`types/index.ts:200-203`) updated to state blocked-download attempts are now persisted
+- [x] `npm run sf` and `npx tsc --noEmit` both exit 0
 
 **Tests**: none
 **Gate**: build

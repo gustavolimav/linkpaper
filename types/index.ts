@@ -197,12 +197,36 @@ export interface DocumentListResponse {
   total: number;
 }
 
-// One row per event in a workspace's activity feed (Phase 12). "view" and
-// "link_created" are the only event types persisted today — NDA
-// acceptance and blocked-download attempts aren't recorded anywhere yet,
-// so they can't appear here until that's built (see TODO.md Phase 12).
+// Append-only audit record: one row per download refused by the
+// server-side allow_download check on the share-link file endpoint. No
+// updated_at — a persisted attempt is immutable history (a later change
+// to the link's allow_download never alters or removes it).
+export interface BlockedDownloadAttempt {
+  id: string;
+  share_link_id: string;
+  document_id: string;
+  // null when the request carried no X-Viewer-Email / X-Viewer-Name
+  viewer_email: string | null;
+  viewer_name: string | null;
+  created_at: Date;
+}
+
+export interface BlockedDownloadCreateInput {
+  share_link_id: string;
+  document_id: string;
+  viewer_email?: string;
+  viewer_name?: string;
+}
+
+export interface BlockedDownloadModel {
+  record(input: BlockedDownloadCreateInput): Promise<BlockedDownloadAttempt>;
+}
+
+// One row per event in a workspace's activity feed (Phase 12). "view",
+// "link_created", and "blocked_download" are persisted today — NDA
+// acceptance still isn't recorded anywhere (see TODO.md Phase 12).
 export interface ActivityEvent {
-  event_type: "view" | "link_created";
+  event_type: "view" | "link_created" | "blocked_download";
   id: string;
   document_id: string;
   document_title: string;
