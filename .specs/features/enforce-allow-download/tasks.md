@@ -265,14 +265,14 @@ T7 → T8
 
 **Done when**:
 
-- [ ] `ACTIVITY_UNION`'s new branch matches `design.md` Component 5's SQL exactly (column list, casts, `false AS is_revisit` literal, JOIN path to `d.workspace_id`)
-- [ ] Stale comment at `models/activity.ts:9-14` no longer claims blocked-download events aren't persisted
-- [ ] Extended tests in `tests/integration/api/v1/activity/get.test.ts`:
+- [x] `ACTIVITY_UNION`'s new branch matches `design.md` Component 5's SQL exactly (column list, casts, `false AS is_revisit` literal, JOIN path to `d.workspace_id`)
+- [x] Stale comment at `models/activity.ts:9-14` no longer claims blocked-download events aren't persisted
+- [x] Extended tests in `tests/integration/api/v1/activity/get.test.ts`:
   - trigger a blocked share-link download (non-PDF, `allow_download: false`, per T3's pattern) with `X-Viewer-Email`/`X-Viewer-Name` headers set, then `GET /api/v1/activity` for that workspace → response includes one `blocked_download` event with `document_id`, `document_title`, `actor_name`, `actor_email` populated and interleaved correctly by `created_at DESC` among any other events (DL-14, DL-15)
   - repeat with no `X-Viewer-Email`/`X-Viewer-Name` headers → the `blocked_download` event still appears, with `actor_name`/`actor_email` both `null` (DL-16)
   - flipping the link's `allow_download` to `true` after the blocked attempt does not remove or alter the already-persisted event on a subsequent `GET /api/v1/activity` (DL-18)
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: existing file's test count + at least 3 new tests, all passing (no silent deletions)
+- [x] Gate check passes: `npm test`
+- [x] Test count: existing file's test count + at least 3 new tests, all passing (no silent deletions)
 
 **Tests**: integration
 **Gate**: full

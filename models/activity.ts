@@ -6,12 +6,11 @@ import type {
   PaginationParams,
 } from "../types/index";
 
-// Two shapes UNION ALL'd together — every column must line up in type
-// across both branches, hence the explicit NULL::type casts on whichever
-// side doesn't have that field. See US-52: NDA-acceptance and
-// blocked-download events aren't included because neither is persisted
-// anywhere today (confirmed by reading models/linkView.ts, models/
-// shareLink.ts, and the file-download route before writing this query).
+// Three shapes UNION ALL'd together — every column must line up in type
+// across all branches, hence the explicit NULL::type casts on whichever
+// side doesn't have that field. See US-52: NDA-acceptance events aren't
+// included because they still aren't persisted anywhere. blocked_download
+// events (share-link only — see AD-004) are the third branch below.
 const ACTIVITY_UNION = `
   SELECT
     'view' AS event_type,
@@ -62,6 +61,30 @@ const ACTIVITY_UNION = `
     documents d ON d.id = sl.document_id
   JOIN
     users u ON u.id = sl.user_id
+  WHERE
+    d.workspace_id = $1
+
+  UNION ALL
+
+  SELECT
+    'blocked_download' AS event_type,
+    bda.id,
+    d.id AS document_id,
+    d.title AS document_title,
+    bda.viewer_name AS actor_name,
+    bda.viewer_email AS actor_email,
+    sl.label AS link_label,
+    NULL::int AS pages_viewed,
+    NULL::int AS page_count,
+    NULL::int AS time_on_page,
+    false AS is_revisit,
+    bda.created_at
+  FROM
+    blocked_download_attempts bda
+  JOIN
+    share_links sl ON sl.id = bda.share_link_id
+  JOIN
+    documents d ON d.id = bda.document_id
   WHERE
     d.workspace_id = $1
 `;
