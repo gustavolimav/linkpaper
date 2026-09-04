@@ -22,6 +22,11 @@ const DATA_ROOM_LINK_COLUMNS = `
   brand_accent_color, brand_welcome_message
 `;
 
+// AD-001: enforcement is scoped to non-PDF documents. Both viewers fetch
+// this same endpoint to render a PDF inline, so blocking PDFs here would
+// break viewing on every "view-only" link.
+const PDF_MIME_TYPE = "application/pdf";
+
 function toResponse(
   link: DataRoomLink,
   allowedEmails: string[],
@@ -106,6 +111,23 @@ function assertLinkIsActiveAndNotExpired(row: {
     throw new ForbiddenError({
       message: "Este link expirou.",
       action: "Solicite um novo link ao proprietário da data room.",
+    });
+  }
+}
+
+// Same rule as shareLink.ts#getFileByToken, minus the audit write: a
+// data-room blocked attempt is refused but not persisted this increment,
+// because models/activity.ts has no data-room representation for any
+// event type yet (AD-004).
+function assertDownloadAllowed(row: {
+  allow_download: boolean;
+  mime_type: string;
+}): void {
+  if (!row.allow_download && row.mime_type !== PDF_MIME_TYPE) {
+    throw new ForbiddenError({
+      message: "O download deste arquivo não está habilitado para este link.",
+      action:
+        "Peça ao proprietário da data room para habilitar o download, se necessário.",
     });
   }
 }
@@ -558,11 +580,13 @@ async function getFileByToken(
   const results = await database.query<{
     storage_key: string;
     mime_type: string;
+    allow_download: boolean;
   }>({
     text: `
         SELECT
           documents.storage_key,
-          documents.mime_type
+          documents.mime_type,
+          data_room_documents.allow_download
         FROM
           data_room_documents
         JOIN
@@ -584,7 +608,14 @@ async function getFileByToken(
     });
   }
 
-  return results.rows[0]!;
+  const documentRow = results.rows[0]!;
+
+  assertDownloadAllowed(documentRow);
+
+  return {
+    storage_key: documentRow.storage_key,
+    mime_type: documentRow.mime_type,
+  };
 }
 
 // Skips the password/email/NDA checks — used by view-event recording,

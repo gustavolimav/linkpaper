@@ -120,32 +120,32 @@ Every ambiguity is resolved or recorded here - nothing is left silently unclear.
 
 Each requirement gets a unique ID for tracking across design, tasks, and validation.
 
-| Requirement ID | Story                                           | Phase  | Status  |
-| -------------- | ----------------------------------------------- | ------ | ------- |
+| Requirement ID | Story                                           | Phase   | Status       |
+| -------------- | ----------------------------------------------- | ------- | ------------ |
 | DL-01          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
 | DL-02          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
 | DL-03          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
 | DL-04          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
 | DL-05          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
-| DL-06          | P1: Data-room file endpoint + Visualizar bypass | Tasks   | In Tasks     |
-| DL-07          | P1: Data-room file endpoint + Visualizar bypass | Tasks   | In Tasks     |
-| DL-08          | P1: Data-room file endpoint + Visualizar bypass | Tasks   | In Tasks     |
+| DL-06          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
+| DL-07          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
+| DL-08          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
 | DL-09          | P1: Data-room file endpoint + Visualizar bypass | Tasks   | In Tasks     |
-| DL-10          | P1: Data-room file endpoint + Visualizar bypass | Tasks   | In Tasks     |
-| DL-11          | P1: Data-room file endpoint + Visualizar bypass | Tasks   | In Tasks     |
+| DL-10          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
+| DL-11          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
 | DL-12          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 | DL-13          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 | DL-14          | P2: Persist + surface blocked-download events   | Tasks   | In Tasks     |
 | DL-15          | P2: Persist + surface blocked-download events   | Tasks   | In Tasks     |
 | DL-16          | P2: Persist + surface blocked-download events   | Execute | Implementing |
-| DL-17          | P2: Persist + surface blocked-download events   | Tasks   | In Tasks     |
+| DL-17          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 | DL-18          | P2: Persist + surface blocked-download events   | Tasks   | In Tasks     |
 
 **ID format:** `[CATEGORY]-[NUMBER]` (`DL` = download-lock enforcement)
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 18 total, 18 mapped to tasks (T1-T8), 8 Implementing (T3-T4), 10 In Tasks (pending T5-T8)
+**Coverage:** 18 total, 18 mapped to tasks (T1-T8), 13 Implementing (T3-T5), 5 In Tasks (pending T6-T8)
 
 ---
 
