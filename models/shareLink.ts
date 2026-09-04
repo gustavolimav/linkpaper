@@ -9,6 +9,7 @@ import { isValidEmail } from "../infra/schemas";
 import password from "./password";
 import workspace from "./workspace";
 import subscription from "./subscription";
+import blockedDownload from "./blockedDownload";
 import type {
   ShareLink,
   ShareLinkResponse,
@@ -30,6 +31,11 @@ const SHARE_LINK_COLUMNS = `
   notify_on_view, require_email, watermark_enabled, nda_text,
   brand_accent_color, brand_welcome_message
 `;
+
+// AD-001: enforcement is scoped to non-PDF documents. Both viewers fetch
+// this same endpoint to render a PDF inline, so blocking PDFs here would
+// break viewing on every "view-only" link.
+const PDF_MIME_TYPE = "application/pdf";
 
 interface ShareLinkTokenRow {
   link_id: string;
@@ -145,6 +151,32 @@ function assertLinkIsActiveAndNotExpired(row: {
       action: "Solicite um novo link ao proprietário do documento.",
     });
   }
+}
+
+// Records the refused attempt, then blocks. Best-effort by design: a
+// failed audit write is swallowed so the 403 is returned either way — the
+// security block must never depend on the audit log succeeding (DL-13).
+// Awaited rather than left dangling so the row is observable within the
+// same request cycle.
+async function denyDownload(
+  row: ShareLinkTokenRow,
+  providedEmail?: string,
+  providedName?: string,
+): Promise<never> {
+  await blockedDownload
+    .record({
+      share_link_id: row.link_id,
+      document_id: row.document_id,
+      ...(providedEmail !== undefined && { viewer_email: providedEmail }),
+      ...(providedName !== undefined && { viewer_name: providedName }),
+    })
+    .catch(() => undefined);
+
+  throw new ForbiddenError({
+    message: "O download deste arquivo não está habilitado para este link.",
+    action:
+      "Peça ao proprietário do documento para habilitar o download, se necessário.",
+  });
 }
 
 // No role check — an existence/deleted_at check only, returning the
@@ -779,12 +811,20 @@ async function getFileByToken(
   providedEmail?: string,
   providedName?: string,
 ): Promise<{ storage_key: string; mime_type: string }> {
+  // Every prior gate (revoked, expired, password, email/allow-list, NDA,
+  // deleted document) has already run and thrown in its existing order —
+  // that ordering requirement (DL-04) is why this check lives here and not
+  // inside fetchAndValidateTokenRow, which getByToken also uses.
   const row = await fetchAndValidateTokenRow(
     token,
     providedPassword,
     providedEmail,
     providedName,
   );
+
+  if (!row.allow_download && row.mime_type !== PDF_MIME_TYPE) {
+    await denyDownload(row, providedEmail, providedName);
+  }
 
   return { storage_key: row.storage_key, mime_type: row.mime_type };
 }
