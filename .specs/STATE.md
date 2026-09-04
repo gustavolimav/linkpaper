@@ -120,5 +120,57 @@ attempt as a successful view. Decision: extending
 **Feature:** `enforce-allow-download`
 **Spec:** `.specs/features/enforce-allow-download/spec.md` (validate_spec.py: 0 errors, 0 warnings)
 **Sizing:** Large
-**Next phase:** Design (architecture for the blocked-download persistence schema — AD-003 — plus component breakdown across `models/shareLink.ts`, `models/dataRoomLink.ts`, `models/activity.ts`, both file-proxy routes, `DataRoomViewerPage.tsx`, and a new migration), then Tasks, then Execute.
-**Branch:** `fix/enforce-allow-download-server-side` (no commits made yet by this phase).
+**Branch:** `fix/enforce-allow-download-server-side`
+
+**Status:** Execute complete. All 8 tasks (T1-T8) implemented and committed,
+one commit per task plus one small `style` commit for a Prettier
+reformat left over from T3:
+
+```
+76600f7 feat(share-link): add blocked_download_attempts migration          (T1)
+1f8d9b8 feat(types): add BlockedDownload types and widen ActivityEvent     (T2)
+13356b5 feat(share-link): enforce allow_download + record blocked attempts (T3)
+89f14c6 test(share-link): pin metadata endpoint against regression         (T4)
+9f05e68 feat(data-room): enforce allow_download parity on file endpoint    (T5)
+44257ab style(share-link): reformat toEqual message line for prettier
+647cd92 fix(data-room): hide Visualizar for non-PDF, download-disabled    (T6)
+d544991 feat(activity): surface blocked_download events in Activity Feed  (T7)
+a6a2e90 fix(activity): render blocked_download instead of mislabeling     (T8)
+```
+
+**Next phase:** Feature-level Verifier (author != verifier, spec-anchored
+outcome check + discrimination sensor), per implement.md step 9. Not yet
+dispatched by this implementer session.
+
+**Known, pre-existing, out-of-scope blockers to a literal `npm test`
+exit 0** (neither introduced nor touched by any T1-T8 commit — see the
+Decisions-adjacent note below for how this was verified):
+
+1. **Worktree test pollution.** `jest.config.js`'s `testPathIgnorePatterns`
+   doesn't exclude `.claude/worktrees/`, so a plain `npm test` also picks
+   up and runs stale test files from sibling worktrees (`frosty-montalcini`,
+   `unruffled-chebyshev`) at different commits, against this tree's live
+   dev server — producing spurious failures (e.g. English vs pt-BR error
+   text, 403-vs-404 authorization differences) unrelated to any code
+   under test.
+2. **Pre-existing Stripe webhook/billing bug.** 6 tests across
+   `tests/integration/api/v1/workspaces/[id]/billing/{checkout,portal}/index.test.ts`
+   and `tests/integration/api/v1/webhooks/stripe/index.test.ts` fail
+   deterministically (confirmed in isolation, zero interference from this
+   feature's files) — a subscription-plan-resolution bug unrelated to
+   download enforcement.
+
+Verified by running `npx jest --runInBand --testPathIgnorePatterns=... ` with
+`.claude/worktrees/` excluded (a worktree-free equivalent of `npm test`)
+after every task's changes: 396-402 passed / 402-408 total each time,
+the same 6 pre-existing Stripe failures and zero others, across every
+gate run T3 through T7. No task in this feature touches
+`infra/stripe.ts`, `models/subscription.ts`, the webhook handler, or
+`jest.config.js` — out of scope per the implementer's file-list
+constraint, noted here rather than fixed.
+
+**Uncommitted, out-of-scope files left in the working tree** (present
+before this session started, not part of any task's `Where` list):
+`package-lock.json` and `tsconfig.tsbuildinfo` (both drift slightly from
+local tool runs), and `open-pr.sh` (an unrelated leftover script from an
+earlier, different feature branch).
