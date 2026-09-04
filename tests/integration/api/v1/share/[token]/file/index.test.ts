@@ -53,8 +53,7 @@ describe("GET /api/v1/share/[token]/file", () => {
     // index.test.ts).
     expect(responseBody).toEqual({
       name: "ForbiddenError",
-      message:
-        "O download deste arquivo não está habilitado para este link.",
+      message: "O download deste arquivo não está habilitado para este link.",
       action:
         "Peça ao proprietário do documento para habilitar o download, se necessário.",
       status: 403,
