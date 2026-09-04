@@ -235,11 +235,11 @@ T7 → T8
 
 **Done when**:
 
-- [ ] `canPreview` computed per row exactly as specified; "Visualizar" button only renders when `canPreview` is true
-- [ ] When `canPreview` is false, the row shows the muted `"Pré-visualização não disponível"` label instead of an empty gap (matches `ViewerPage.tsx`'s wording verbatim)
-- [ ] The existing "Baixar" button's `doc.allow_download &&` condition is unchanged
-- [ ] `npm run sf` and `npx tsc --noEmit` both exit 0
-- [ ] Manual verification against `design.md` Component 7's exact JSX (no automated test exists for this layer per the Test Coverage Matrix - the server-side check added in T5 is DL-10's actual guarantee)
+- [x] `canPreview` computed per row exactly as specified; "Visualizar" button only renders when `canPreview` is true
+- [x] When `canPreview` is false, the row shows the muted `"Pré-visualização não disponível"` label instead of an empty gap (matches `ViewerPage.tsx`'s wording verbatim)
+- [x] The existing "Baixar" button's `doc.allow_download &&` condition is unchanged
+- [x] `npm run sf` and `npx tsc --noEmit` both exit 0
+- [x] Manual verification against `design.md` Component 7's exact JSX (no automated test exists for this layer per the Test Coverage Matrix - the server-side check added in T5 is DL-10's actual guarantee)
 
 **Tests**: none
 **Gate**: build
