@@ -20,7 +20,7 @@
 | 9     | Team Workspaces & Data Rooms       | ✅ Done (US-55 data rooms shipped; custom domain per workspace deferred) |
 | 10    | Monetization                       | ✅ Done                                                                  |
 | 11    | Visual Identity & UI Redesign      | ✅ Done (US-39–51 all shipped; US-39/47 on `main`, remainder on PR)      |
-| 12    | Activity Feed                      | ⏳ Views/link-creation/revisits done; NDA/blocked-download deferred      |
+| 12    | Activity Feed                      | ⏳ Views/link-creation/revisits/blocked-download done; NDA deferred      |
 | 13    | Global Links Inventory             | ✅ Done                                                                  |
 | 14    | Contacts / Viewer Directory        | ✅ Done                                                                  |
 
@@ -773,10 +773,12 @@ today) while reviewing the Phase 11 design prototype's "Atividade" page.
   - [ ] Persist NDA acceptance (e.g. a `link_views.nda_accepted_at`
         column, set when a viewer with `nda_text` set on their link
         submits the gate) and surface it as an activity event
-  - [ ] Enforce `allow_download` server-side on the file-download route
-        (today `pages/api/v1/share/[token]/file` never checks it — it's
-        a client-side-only hide in `ViewerControls.tsx`) and persist a
-        record of each blocked attempt to surface as an activity event
+  - [x] Enforce `allow_download` server-side on the file-download route
+        and persist a record of each blocked attempt to surface as an
+        activity event — **done** (2026-09-04), scoped to non-PDF
+        documents on share links (see the Code Quality tech-debt entry
+        above for the PDF exception and the data-room-persistence
+        follow-up). See CHANGELOG.
 - [x] `GET /api/v1/activity` (paginated) — scoped to
       `request.user.active_workspace_id`, same trust boundary as `GET
 /api/v1/documents` (no separate `requireRole` call needed). See
@@ -885,7 +887,11 @@ These are not tied to a specific phase but should be addressed progressively.
 - [x] CI: add TypeScript type-check step to GitHub Actions — `typecheck` job in `.github/workflows/linting.yaml`
 - [x] Non-PDF documents (`.docx`/`.pptx`) show a "preview not available" message in the public viewer instead of any content, and — because `ViewerPage.tsx`'s non-PDF branch skips the file fetch entirely — never record a view either, so their analytics stay at zero regardless of real traffic. **Investigated (2026-07-22), findings in `user-stories/tech-debt/US-34-investigate-non-pdf-viewer.md`**: reproduced firsthand (no crash, matches the fallback message exactly), confirmed the view-tracking gap is real and total (`view_count`/`engagement_score` stay `0` despite real visits), confirmed the download button works end-to-end when `allow_download: true`. **Recommendation: don't build inline preview** (every option — client rendering, server-side PDF conversion, third-party iframe — has a real cost not justified without evidence of demand, and DocSend/Papermark-class competitors have the same limitation); **do fix the view-tracking gap** instead, since an owner sharing a non-PDF file today has zero visibility into whether anyone opened it. Two follow-up stories to file:
   - [ ] Record real view events for non-PDF documents — call `POST /api/v1/share/[token]/view` regardless of mime type (omitting page-based fields that don't apply), so non-PDF documents get the same view-count/engagement-score/owner-notification treatment PDFs already have.
-  - [ ] `models/shareLink.ts#getFileByToken` doesn't check `allow_download` at all — confirmed via direct `curl` that a `allow_download: false` link's `/file` endpoint still serves the bytes (the restriction is a UI-only hide, not server-enforced). Should return `403` when `allow_download` is `false`, for both PDF and non-PDF links.
+  - [x] `models/shareLink.ts#getFileByToken` doesn't check `allow_download` at all — **fixed**, scoped to non-PDF documents (PDF `allow_download` is a separate, deliberately deferred follow-up — see below): now returns `403` server-side, matching parity in `models/dataRoomLink.ts#getFileByToken` too, plus closed a second bypass in the data-room "Visualizar" action. Each blocked share-link attempt is persisted and surfaced in the Activity Feed as a new `blocked_download` event, closing the Phase 12 follow-up below too. Built via the `tlc-spec-driven` methodology with an independent Verifier pass (18/18 requirement ACs covered, discrimination-sensor mutation test with 0 survivors). See CHANGELOG and `.specs/features/enforce-allow-download/`.
+    - [ ] PDF `allow_download` is still UI-only, deliberately: both `ViewerPage.tsx` and `DataRoomViewerPage.tsx` fetch the same file-proxy endpoint to render a PDF inline, with no request-level way to distinguish "rendering" from "extracting" — blocking it would break every "view-only" PDF link. Real prevention needs a different mechanism (e.g. server-rendered per-page images instead of raw bytes) — new, narrower follow-up, not started.
+    - [ ] Data-room blocked-download attempts are enforced (`403`) but not persisted/surfaced in the Activity Feed — the feed has zero data-room representation today for any event type (`view`, `link_created` included), so adding just one data-room event type would be inconsistent. Full data-room activity-feed parity is its own future increment.
+- [ ] `jest.config.js`'s `testPathIgnorePatterns` excludes `node_modules/` and `tests/e2e/` but not `.claude/worktrees/` — a bare `npm test` from the repo root also collects and runs any stale test files checked out in sibling git worktrees under that directory, which fail for reasons unrelated to the current branch (stale content, version drift). Found while independently verifying the `enforce-allow-download` feature (2026-09-04) — confirmed pre-existing on `main`, unrelated to that feature's diff. Fix: add `"<rootDir>/.claude/"` to `testPathIgnorePatterns`.
+- [ ] On at least one dev machine, an untracked `.env.development.local` sets a real `STRIPE_SECRET_KEY` and real `STRIPE_PRICE_ID_PRO`/`STRIPE_PRICE_ID_BUSINESS`, which Next.js loads with higher precedence than the committed `.env.development`'s dummy values. This makes several "Stripe not configured → 503" tests (both Jest and the `billing-tab-and-homepage` Playwright spec) fail locally, because they hit a real-looking Stripe path instead of the expected graceful-degradation one. Found and root-caused while independently verifying the `enforce-allow-download` feature (2026-09-04) — confirmed unrelated to that feature (reproduced identically on `main`, and passes clean in an env without that local override file). Not a code bug — worth a `CLAUDE.md` note that a real `.env.development.local` will make the Stripe test suite misbehave, so contributors know to unset it (or the tests should assert on behavior more robustly than "was a real key present").
 
 ### Security hardening (2026-07-12)
 
