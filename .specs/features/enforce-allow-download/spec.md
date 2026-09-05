@@ -136,7 +136,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DL-12          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 | DL-13          | P2: Persist + surface blocked-download events   | Execute | Verified     |
 | DL-14          | P2: Persist + surface blocked-download events   | Execute | Implementing |
-| DL-15          | P2: Persist + surface blocked-download events   | Execute | Implementing |
+| DL-15          | P2: Persist + surface blocked-download events   | Execute | Verified     |
 | DL-16          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 | DL-17          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 | DL-18          | P2: Persist + surface blocked-download events   | Execute | Implementing |
