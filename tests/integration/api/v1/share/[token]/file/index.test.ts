@@ -1,4 +1,5 @@
 import orchestrator from "tests/orchestrator";
+import database from "infra/database";
 
 const NON_PDF_MIME_TYPE =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -134,5 +135,48 @@ describe("GET /api/v1/share/[token]/file", () => {
 
     const responseBody = await response.json();
     expect(responseBody.name).toBe("ForbiddenError");
+  });
+
+  test("A blocked attempt still returns 403 even when the audit-write INSERT itself fails (DL-13)", async () => {
+    const { cookie } = await orchestrator.createUserSession();
+    const document = await orchestrator.uploadDocument(cookie, {
+      mimeType: NON_PDF_MIME_TYPE,
+      filename: "a.docx",
+      buffer: Buffer.from("fake docx bytes"),
+    });
+    const link = await orchestrator.createShareLink(cookie, document.id, {
+      allow_download: false,
+    });
+
+    // Forces the best-effort blockedDownload.record(...) INSERT inside
+    // denyDownload (models/shareLink.ts) to fail deterministically, by
+    // renaming its target table out from under it for the duration of
+    // this one request. Safe because this suite only ever runs with
+    // `jest --runInBand` (see package.json's "test" script), so no other
+    // test executes concurrently against the same database.
+    await database.query({
+      text: "ALTER TABLE blocked_download_attempts RENAME TO blocked_download_attempts_tmp_disabled;",
+    });
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/v1/share/${link.token}/file`,
+      );
+
+      expect(response.status).toBe(403);
+
+      const responseBody = await response.json();
+      expect(responseBody).toEqual({
+        name: "ForbiddenError",
+        message: "O download deste arquivo não está habilitado para este link.",
+        action:
+          "Peça ao proprietário do documento para habilitar o download, se necessário.",
+        status: 403,
+      });
+    } finally {
+      await database.query({
+        text: "ALTER TABLE blocked_download_attempts_tmp_disabled RENAME TO blocked_download_attempts;",
+      });
+    }
   });
 });
