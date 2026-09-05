@@ -48,13 +48,13 @@ this section only records how it's wired into this repo.
 An autonomous cycle is orchestrated by the main session, which dispatches
 role-scoped sub-agents matching the skill's phases:
 
-| Agent               | Phase                | Responsibility                                                             |
-| -------------------- | --------------------- | --------------------------------------------------------------------------------- |
-| `spec-planner`       | Specify (+ Discuss)   | Turns a chosen increment into `spec.md` (EARS ACs, priorities, requirement IDs)   |
-| `architect`          | Design (Large/Complex only) | Architecture, components, data model, file-level plan in `design.md`      |
-| `task-planner`       | Tasks (Large/Complex only)  | Breaks spec/design into atomic tasks + Test Coverage Matrix in `tasks.md` |
-| `implementer`        | Execute (batch worker) | Implements one batch of tasks: test → code → gate → one atomic commit    |
-| `verifier`           | Execute (final step)  | Independent PASS/FAIL verdict; never the same agent/context that implemented |
+| Agent          | Phase                       | Responsibility                                                                  |
+| -------------- | --------------------------- | ------------------------------------------------------------------------------- |
+| `spec-planner` | Specify (+ Discuss)         | Turns a chosen increment into `spec.md` (EARS ACs, priorities, requirement IDs) |
+| `architect`    | Design (Large/Complex only) | Architecture, components, data model, file-level plan in `design.md`            |
+| `task-planner` | Tasks (Large/Complex only)  | Breaks spec/design into atomic tasks + Test Coverage Matrix in `tasks.md`       |
+| `implementer`  | Execute (batch worker)      | Implements one batch of tasks: test → code → gate → one atomic commit           |
+| `verifier`     | Execute (final step)        | Independent PASS/FAIL verdict; never the same agent/context that implemented    |
 
 The orchestrating session never implements code itself when a team is
 running a cycle — it picks the increment, dispatches phases in order, and
