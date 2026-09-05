@@ -179,4 +179,35 @@ describe("GET /api/v1/share/[token]/file", () => {
       });
     }
   });
+
+  test("A revoked link returns the revoked-link error, not the download-blocked 403, even for a non-PDF document with allow_download false (DL-04)", async () => {
+    const { cookie } = await orchestrator.createUserSession();
+    const document = await orchestrator.uploadDocument(cookie, {
+      mimeType: NON_PDF_MIME_TYPE,
+      filename: "a.docx",
+      buffer: Buffer.from("fake docx bytes"),
+    });
+    const link = await orchestrator.createShareLink(cookie, document.id, {
+      allow_download: false,
+    });
+
+    await fetch(
+      `http://localhost:3000/api/v1/documents/${document.id}/links/${link.id}`,
+      { method: "DELETE", headers: { Cookie: cookie } },
+    );
+
+    const response = await fetch(
+      `http://localhost:3000/api/v1/share/${link.token}/file`,
+    );
+
+    expect(response.status).toBe(403);
+
+    const responseBody = await response.json();
+    expect(responseBody).toEqual({
+      name: "ForbiddenError",
+      message: "Este link foi revogado.",
+      action: "Solicite um novo link ao proprietário do documento.",
+      status: 403,
+    });
+  });
 });
