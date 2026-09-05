@@ -134,7 +134,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DL-10          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
 | DL-11          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
 | DL-12          | P2: Persist + surface blocked-download events   | Execute | Implementing |
-| DL-13          | P2: Persist + surface blocked-download events   | Execute | Implementing |
+| DL-13          | P2: Persist + surface blocked-download events   | Execute | Verified     |
 | DL-14          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 | DL-15          | P2: Persist + surface blocked-download events   | Execute | Implementing |
 | DL-16          | P2: Persist + surface blocked-download events   | Execute | Implementing |
