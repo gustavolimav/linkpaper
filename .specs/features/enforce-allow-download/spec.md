@@ -125,7 +125,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DL-01          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
 | DL-02          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
 | DL-03          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
-| DL-04          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
+| DL-04          | P1: Share-link file endpoint enforcement        | Execute | Verified     |
 | DL-05          | P1: Share-link file endpoint enforcement        | Execute | Implementing |
 | DL-06          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
 | DL-07          | P1: Data-room file endpoint + Visualizar bypass | Execute | Implementing |
