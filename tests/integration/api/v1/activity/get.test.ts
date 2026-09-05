@@ -169,6 +169,10 @@ describe("GET /api/v1/activity", () => {
         document_title: "Confidential.docx",
         actor_name: "Blocked Visitor",
         actor_email: "blocked@example.com",
+        pages_viewed: null,
+        page_count: null,
+        time_on_page: null,
+        is_revisit: false,
       });
 
       // interleaved correctly among the other event (link_created) by
